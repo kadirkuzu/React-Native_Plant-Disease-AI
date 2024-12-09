@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "plant-disease-AI",
-    "slug": "plant-disease-AI",
+    "name": "plant-disease-app",
+    "slug": "plant-disease-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
