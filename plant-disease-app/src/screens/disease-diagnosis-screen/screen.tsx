@@ -27,7 +27,7 @@ export const DiseaseDiagnosisScreen = () => {
 
       {imageUri && (
         <View style={Styles.imageContainer}>
-          <Image source={{ uri: imageUri }} style={Styles.image} />
+          <Image source={{ uri: `data:image/jpeg;base64,${imageUri}` }} style={Styles.image} />
         </View>
       )}
 
