@@ -15,12 +15,11 @@ export const UploadButton = ({ onImageSelected }: { onImageSelected: (uri: strin
     if (permission.granted) {
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ['images'],
-        quality: 1,
-        base64: true
+        quality: 1
       });
 
       if (!result.canceled && result.assets) {
-        const imageUri = result.assets[0].base64;
+        const imageUri = result.assets[0].uri;
         onImageSelected(imageUri ?? '');
       }
     }
@@ -31,11 +30,10 @@ export const UploadButton = ({ onImageSelected }: { onImageSelected: (uri: strin
     if (permission.granted) {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
-        quality: 1,
-        base64: true
+        quality: 1
       });
       if (!result.canceled && result.assets) {
-        const imageUri = result.assets[0].base64;
+        const imageUri = result.assets[0].uri;
         onImageSelected(imageUri ?? '');
       }
     }
