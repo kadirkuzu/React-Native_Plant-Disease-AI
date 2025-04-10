@@ -3,7 +3,7 @@ import { decodeJpeg } from '@tensorflow/tfjs-react-native';
 import { labels } from '../../../assets/labels';
 import { convertToJPEG, getBase64 } from './file.helper';
 
-export const base64ToTensor = async (uri: string) => {
+export const imageToTensor = async (uri: string) => {
   const jpegUri = await convertToJPEG(uri)
   const base64 = await getBase64(jpegUri)
 
@@ -16,17 +16,16 @@ export const base64ToTensor = async (uri: string) => {
   const normalized = resized.div(255);
   const batched = normalized.expandDims(0);
 
-  return batched;
+  return {batched, base64};
 };
 
-export const getDataFromOutput = (output: number[]) => {
-  const outputArray = Array.from(output); // TypedArray -> normal array
+export const getDataFromOutput = (outputArray: number[]) => {
   const maxIndex = outputArray.indexOf(Math.max(...outputArray));
-  const label = labels[maxIndex];
-  const probability = (outputArray[maxIndex] * 100).toFixed(2); // yüzde olarak
+  const data = labels[maxIndex];
+  const probability = Math.floor(outputArray[maxIndex] * 100) 
 
   return {
-    label,
+    ...data,
     probability: `${probability}%`
   };
 };

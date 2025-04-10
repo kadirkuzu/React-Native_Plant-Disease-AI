@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, TouchableOpacity } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NavigationType } from '../../navigation/params';
 import { UploadButton } from './upload-button/component';
@@ -9,13 +9,14 @@ import Icon from '@expo/vector-icons/FontAwesome';
 import * as tf from '@tensorflow/tfjs';
 import '@tensorflow/tfjs-react-native';
 import { bundleResourceIO } from '@tensorflow/tfjs-react-native';
-import { base64ToTensor, getDataFromOutput } from '../../core/helpers/model.helper';
+import { imageToTensor, getDataFromOutput } from '../../core/helpers/model.helper';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const DiseaseDiagnosisScreen = () => {
   const navigation = useNavigation<NavigationType>();
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [isTfReady, setIsTfReady] = useState(false);
-  const [prediction, setPrediction] = useState(null as any);
+  const [isLoading, setIsLoading] = useState(null as any);
 
   const handleImageSelected = (uri: string) => {
     setImageUri(uri);
@@ -29,26 +30,56 @@ export const DiseaseDiagnosisScreen = () => {
     loadTf();
   }, []);
 
+  const addData = async (data: {probability: string, label: string, isHealty: boolean}, base64: string) => {
+    const formattedDate = new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).format(new Date());
+
+    const historyItem = {
+      imageUri: base64,
+      label: data.label,
+      date: formattedDate,
+      probability: data.probability,
+      isHealty: data.isHealty
+    };
+
+    const existingHistory = await AsyncStorage.getItem('historyData');
+    const parsedHistory = existingHistory ? JSON.parse(existingHistory) : [];
+    parsedHistory.unshift(historyItem);
+    await AsyncStorage.setItem('historyData', JSON.stringify(parsedHistory));
+  }
 
   const runModel = async () => {
-    const modelJson = require('../../../assets/model.json');
-    const modelWeights = [
-      require('../../../assets/group1-shard1of2.bin'),
-      require('../../../assets/group1-shard2of2.bin'),
-    ];
-    const model = await tf.loadGraphModel(bundleResourceIO(modelJson, modelWeights));
-    const inputTensor = await base64ToTensor(imageUri!)
-    const prediction = model.predict(inputTensor!) as tf.Tensor;
-    const output = await prediction.data();
-
-
-    console.error('output :' + getDataFromOutput(output as any).label)
-    console.error('probability :' + getDataFromOutput(output as any).probability)
+    try {
+      setIsLoading(true)
+      const modelJson = require('../../../assets/model.json');
+      const modelWeights = [
+        require('../../../assets/group1-shard1of2.bin'),
+        require('../../../assets/group1-shard2of2.bin'),
+      ];
+      const model = await tf.loadGraphModel(bundleResourceIO(modelJson, modelWeights));
+      const inputTensor = await imageToTensor(imageUri!)
+      const prediction = model.predict(inputTensor.batched) as tf.Tensor;
+      const output = await prediction.data();
   
-    return output;
-  };
+      const data = getDataFromOutput(Array.from(output))
+  
+      setIsLoading(false)
+      setImageUri('')
 
-  // navigation.navigate(Routes.Result, { imageUri, result: 'Your plant is healthy! No disease detected.' })
+      await addData(data,inputTensor.base64)
+      
+      navigation.navigate(Routes.Result, { imageUri: inputTensor.base64, data})
+
+    } catch (error) {
+      setIsLoading(false)
+    }
+  };
 
   return (
     <View style={Styles.container}>
@@ -70,9 +101,11 @@ export const DiseaseDiagnosisScreen = () => {
         <TouchableOpacity
           style={Styles.proceedButton}
           onPress={runModel}
+          disabled={isLoading}
         >
           <Icon name="arrow-right" size={20} color="#FFF" style={Styles.proceedIcon} />
           <Text style={Styles.proceedText}>Proceed with Diagnosis</Text>
+          { isLoading && <ActivityIndicator color={'white'} style={{marginLeft: 20}} /> } 
         </TouchableOpacity>
       )}
     </View>

@@ -51,4 +51,10 @@ export const Styles = StyleSheet.create({
     fontSize: 14,
     color: '#777',
   },
+  probabilityText: {
+    fontSize: 14,
+    color: '#888',
+    fontWeight: '500',
+    marginTop: 4,
+},
 });

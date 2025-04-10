@@ -5,7 +5,7 @@ import { DrawerNavigationProp } from '@react-navigation/drawer';
 export type RootStackParamList = {
     [Routes.Home]: undefined;
     [Routes.DiseaseDiagnosis]: undefined;
-    [Routes.Result]: {imageUri: string, result:string};
+    [Routes.Result]: {imageUri: string, data: { probability: string, label: string, isHealty: boolean}};
     [Routes.History]: undefined;
 };
 

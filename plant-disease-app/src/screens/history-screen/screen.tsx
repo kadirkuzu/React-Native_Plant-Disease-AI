@@ -1,33 +1,39 @@
-import React from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, Alert, } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, FlatList, Image, TouchableOpacity, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Styles } from './styles';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { Routes } from '../../navigation/routes';
 
-const mockHistoryData = [
-    {
-        id: '1',
-        imageUri: 'https://c.pxhere.com/photos/17/6b/autumn_blur_canada_daylight_depth_of_field_fall_flora_focus-1548847.jpg!d', // Replace with real URIs
-        result: 'Healthy plant',
-        date: '2024-12-01',
-    },
-    {
-        id: '2',
-        imageUri: 'https://c.pxhere.com/photos/17/6b/autumn_blur_canada_daylight_depth_of_field_fall_flora_focus-1548847.jpg!d', // Replace with real URIs
-        result: 'Powdery Mildew Detected',
-        date: '2024-12-02',
-    },
-    {
-        id: '3',
-        imageUri: 'https://c.pxhere.com/photos/17/6b/autumn_blur_canada_daylight_depth_of_field_fall_flora_focus-1548847.jpg!d', // Replace with real URIs
-        result: 'Black Spot Disease Detected',
-        date: '2024-12-03',
-    },
-];
+interface HistoryItem {
+    imageUri: string;
+    label: string;
+    date: string;
+    probability: string;
+    isHealty: boolean
+}
 
 export const HistoryScreen = () => {
-    const handlePreview = (imageUri: string, result: string) => {
-        Alert.alert('Diagnosis Result', `${result}`, [
-            { text: 'Close', style: 'cancel' },
-        ]);
+    const [historyData, setHistoryData] = useState<HistoryItem[]>([]);
+    const navigation = useNavigation<NavigationType>();
+
+    useFocusEffect(
+        React.useCallback(() => {
+            const fetchHistoryData = async () => {
+                const storedData = await AsyncStorage.getItem('historyData');
+                if (storedData) {
+                    const parsedData: HistoryItem[] = JSON.parse(storedData);
+                    setHistoryData(parsedData);
+                }
+            };
+
+            fetchHistoryData();
+        }, [])
+    );
+
+
+    const handlePreview = (imageUri: string, data: HistoryItem) => {
+        navigation.navigate(Routes.Result, { imageUri, data })
     };
 
     return (
@@ -37,17 +43,21 @@ export const HistoryScreen = () => {
             </Text>
 
             <FlatList
-                data={mockHistoryData}
-                keyExtractor={(item) => item.id}
+                data={historyData}
+                keyExtractor={(item, index) => index.toString()}
                 renderItem={({ item }) => (
                     <TouchableOpacity
                         style={Styles.historyItem}
-                        onPress={() => handlePreview(item.imageUri, item.result)}
+                        onPress={() => handlePreview(item.imageUri, item)}
                     >
-                        <Image source={{ uri: item.imageUri }} style={Styles.historyImage} />
+                        <Image
+                            source={{ uri: `data:image/png;base64,${item.imageUri}` }}
+                            style={Styles.historyImage}
+                        />
                         <View style={Styles.historyTextContainer}>
-                            <Text style={Styles.resultText}>{item.result}</Text>
+                            <Text style={Styles.resultText}>{item.label}</Text>
                             <Text style={Styles.dateText}>{item.date}</Text>
+                            <Text style={Styles.probabilityText}>Probability: {item.probability}</Text>
                         </View>
                     </TouchableOpacity>
                 )}
