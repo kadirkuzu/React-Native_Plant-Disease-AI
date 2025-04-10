@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Styles } from './styles';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Routes } from '../../navigation/routes';
+import { NavigationType } from '../../navigation/params';
 
 interface HistoryItem {
     imageUri: string;
